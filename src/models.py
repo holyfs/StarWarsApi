@@ -98,25 +98,57 @@ class Vehicles(db.Model):
             "cargo_capacity":self.cargo_capacity
         }
 
-class Favorites(db.Model):
-    __tablename__ = 'favorites'
+class User_planets(db.Model):
+    __tablename__ = 'user_planets'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user=db.relationship('User')
+    planets_id = db.Column(db.Integer, db.ForeignKey('planets.id'))
+    planets=db.relationship('Planets')
+
+    def __repr__(self):
+        return '<User_planets %r>' % self.user_id
+
+    def serialize(self):
+        return {
+            "planets":self.planets.serialize()
+         }
+    def serialize_fav(self):
+        return self.planets.serialize()
+
+class User_vehicles(db.Model):
+    __tablename__ = 'user_vehicles'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user=db.relationship('User')
+    vehicles_id = db.Column(db.Integer, db.ForeignKey('vehicles.id'))
+    vehicles=db.relationship('Vehicles')
+
+    def __repr__(self):
+        return '<User_vehicles %r>' % self.user_id
+
+    def serialize(self):
+        return {
+            "vehicles":self.vehicles.serialize()
+        }
+    def serialize_fav(self):
+        return self.vehicles.serialize()
+          
+
+class User_characters(db.Model):
+    __tablename__ = 'user_characters'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     user=db.relationship('User')
     characters_id = db.Column(db.Integer, db.ForeignKey('characters.id'))
     characters=db.relationship('Characters')
-    vehicles_id = db.Column(db.Integer, db.ForeignKey('vehicles.id'))
-    vehicles=db.relationship('Vehicles')
-    planets_id = db.Column(db.Integer, db.ForeignKey('planets.id'))
-    planets=db.relationship('Planets')
 
     def __repr__(self):
-        return '<Favorites %r>' % self.user_id
+        return '<User_characters %r>' % self.user_id
 
     def serialize(self):
         return {
-            "user":self.user.serialize(),
-            "characters":self.characters.serialize(),
-            "vehicles":self.vehicles.serialize(),
-            "planets":self.planets.serialize()
-        } 
+            "characters":self.characters.serialize()
+        }
+    def serialize_fav(self):
+        return self.characters.serialize()  
