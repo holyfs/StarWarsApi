@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, Characters, Planets, Vehicles , Favorites
+from models import db, User, Characters, Planets, Vehicles, User_characters, User_planets, User_vehicles 
 #from models import Person
 
 app = Flask(__name__)
@@ -32,7 +32,7 @@ def sitemap():
 
 #User
 #Method GET
-@app.route('/user', methods=['GET'])
+@app.route('/users', methods=['GET'])
 def get_user():
     user = User.query.all()
     all_users = list(map(lambda user: user.serialize(), user))
@@ -228,52 +228,150 @@ def single_vehicle(vehicles_id):
         return jsonify(vehicle.serialize()),200 
 
 #Favorites
-#Method GET
-@app.route('/favorites', methods=['GET'])
-def get_favorites():
-    response= {"msg": "OK FAVORITES"}
-    return jsonify(response),200
 #user_Favorites
 #method GET
-@app.route('/user/<int:user_id>/favorites', methods=['GET'])
-def get_user_favorites(user_id):
-    favorites = Favorites.query.filter_by(user_id=user_id).all()
-    if len(favorites) <= 0:
-        raise APIException("not favorites found", 400)
-    all_favorites = list(map(lambda favorite: favorite.serialize(), favorites))
-    return jsonify(all_favorites),200
+@app.route('/user/favorites', methods=['GET'])
+def get_user_favorites():
+    user_all_favorites=[]
+    body = request.get_json()
+    user = body["user_id"]
+    user = User.query.filter(User.id==user).first()
+    planets=[]
+    if not user:
+       raise APIException("not user found", 400) 
+    favorite_planet = User_planets.query.filter(User_planets.user_id==user.id).first()
+    if not favorite_planet:
+        planets= list(map(lambda planet: planet.serialize(), planets))
+        user_all_favorites.append(planets)
+    else:
+        user_all_favorites.append(favorite_planet)
+    favorite_vehicle = User_vehicles.query.filter(User_vehicles.user_id==user.id).first()
+    if not favorite_vehicle:
+        print("no hay nada")
+    else: 
+        user_all_favorites.append(favorite_vehicle)
+    favorite_character = User_characters.query.filter(User_characters.user_id==user.id).first()
+    if not favorite_character:
+        print("no hay nada")
+    else:
+        user_all_favorites.append(favorite_character)
+    final_list = list(map(lambda favorite: favorite.serialize(), user_all_favorites))
+    return jsonify(final_list),200
 #user_Favorites
 #method POST
-@app.route('/user/favorites', methods=['POST'])
-def add_user_favorites():
-    body = request.get_json()
-    favorite = Favorites(
-        user_id=body["user_id"],
-        characters_id=body["characters_id"],
-        vehicles_id=body["vehicles_id"],
-        planets_id=body["planets_id"],
-        )
-    db.session.add(favorite)
-    db.session.commit()
-    res = {"msg":"Favorite added"}
+@app.route('/user/favorite/planet/<int:planets_id>', methods=['POST', 'DELETE'])
+def add_user_favorite_planet(planets_id):
+    if request.method=='POST':
+        body = request.get_json()
+        user = body["user_id"]
+        user = User.query.filter(User.id==user).first()
+        planet = Planets.query.get(planets_id)
+        exist_planet= Planets.query.filter(Planets.id==planets_id).first()
+        if not exist_planet:
+            raise APIException("planet not found", 404)
+        favorite_planet = User_planets(
+            user_id=user.id,
+            planets_id=planet.id
+            )
+        exist_planet_in_user=User_planets.query.filter(User_planets.planets_id==planets_id).first()
+        if exist_planet_in_user:
+            raise APIException("the planet already exist in this user", 404)
+        else:
+            db.session.add(favorite_planet)
+            db.session.commit()
+            res = {"msg":"Favorite planet added"}   
+    if request.method=='DELETE':
+        body = request.get_json()
+        user = body["user_id"]
+        user = User.query.filter(User.id==user).first()
+        planet = Planets.query.get(planets_id)
+        exist_planet= Planets.query.filter(Planets.id==planets_id).first()
+        if not exist_planet:
+            raise APIException("planet not found", 404)
+        favorite_planet = User_planets.query.filter(User_planets.planets_id==planets_id).first()
+        exist_favorite_planet_user= User_planets.query.filter(User_planets.planets_id==planets_id).first()
+        if not exist_favorite_planet_user:
+            raise APIException("Bad request",500)
+        db.session.delete(favorite_planet)
+        db.session.commit()
+        res = {"msg":"Favorite planet deleted"}
     return jsonify(res),200
-#user_Favorites
-#method Delete
-@app.route('/user/<int:user_id>/favorites', methods=['DELETE'])
-def delete_user_favorites(user_id):
-    user = User.query.get(user_id)
-    if user is None:
-        raise APIException("user not found", 404)
-    else: favorite = Favorites.query.filter_by(user_id=user_id).first()
-    print(favorite)
-    if favorite is None:
-        raise APIException("favorites not found", 404)
-    db.session.delete(favorite)
-    db.session.commit()
-    res = {"msg":"Favorite deleted"}
-    return jsonify(res),200  
 
+@app.route('/user/favorite/vehicle/<int:vehicles_id>', methods=['POST', 'DELETE'])
+def add_user_favorite_vehicle(vehicles_id):
+    if request.method=='POST':
+        body = request.get_json()
+        user = body["user_id"]
+        user = User.query.filter(User.id==user).first()
+        vehicle = Vehicles.query.get(vehicles_id)
+        exist_vehicle= Vehicles.query.filter(Vehicles.id==vehicles_id).first()
+        if not exist_vehicle:
+            raise APIException("vehicle not found", 404)
+        favorite_vehicle = User_vehicles(
+            user_id=user.id,
+            vehicles_id=vehicle.id
+            )
+        exist_vehicle_in_user=User_vehicles.query.filter(User_vehicles.vehicles_id==vehicles_id).first()
+        if exist_vehicle_in_user:
+            raise APIException("the vehicle already exist in this user", 404)
+        else:
+            db.session.add(favorite_vehicle)
+            db.session.commit()
+        res = {"msg":"Favorite vehicle added"}
+    if request.method=='DELETE':
+        body = request.get_json()
+        user = body["user_id"]
+        user = User.query.filter(User.id==user).first()
+        vehicle = Vehicles.query.get(vehicles_id)
+        exist_vehicle= Vehicles.query.filter(Vehicles.id==vehicles_id).first()
+        if not exist_vehicle:
+            raise APIException("vehicle not found", 404)
+        favorite_vehicle = User_vehicles.query.filter(User_vehicles.vehicles_id==vehicles_id).first()
+        exist_favorite_vehicle_user= User_vehicles.query.filter(User_vehicles.vehicles_id==vehicles_id).first()
+        if not exist_favorite_vehicle_user:
+            raise APIException("Bad request",500)
+        db.session.delete(favorite_vehicle)
+        db.session.commit()
+        res = {"msg":"Favorite vehicle deleted"}
+    return jsonify(res),200
 
+@app.route('/user/favorite/character/<int:characters_id>', methods=['POST', 'DELETE'])
+def add_user_favorite_character(characters_id):
+    if request.method=='POST':
+        body = request.get_json()
+        user = body["user_id"]
+        user = User.query.filter(User.id==user).first()
+        character = Characters.query.get(characters_id)
+        exist_character= Characters.query.filter(Characters.id==characters_id).first()
+        if not exist_character:
+            raise APIException("character not found", 404)
+        favorite_character = User_characters(
+            user_id=user.id,
+            characters_id=character.id
+            )
+        exist_character_in_user=User_characters.query.filter(User_characters.characters_id==characters_id).first()
+        if exist_character_in_user:
+            raise APIException("the character already exist in this user", 404)
+        else:
+            db.session.add(favorite_character)
+            db.session.commit()
+        res = {"msg":"Favorite character added"}
+    if request.method=='DELETE':
+        body = request.get_json()
+        user = body["user_id"]
+        user = User.query.filter(User.id==user).first()
+        character = Characters.query.get(characters_id)
+        exist_character= Characters.query.filter(Characters.id==characters_id).first()
+        if not exist_character:
+            raise APIException("character not found", 404)
+        favorite_character = User_characters.query.filter(User_characters.characters_id==characters_id).first()
+        exist_favorite_character_user= User_characters.query.filter(User_characters.characters_id==characters_id).first()
+        if not exist_favorite_character_user:
+            raise APIException("Bad request",500)
+        db.session.delete(favorite_character)
+        db.session.commit()
+        res = {"msg":"Favorite character deleted"}
+    return jsonify(res),200
 
 
 # this only runs if `$ python src/main.py` is executed
