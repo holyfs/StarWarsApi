@@ -232,33 +232,32 @@ def single_vehicle(vehicles_id):
 #method GET
 @app.route('/user/favorites', methods=['GET'])
 def get_user_favorites():
-    user_all_favorites=[]
+    planets=[]
+    vehicles=[]
+    characters=[]
     body = request.get_json()
     user = body["user_id"]
     user = User.query.filter(User.id==user).first()
-    planets=[]
     if not user:
        raise APIException("not user found", 400) 
-    favorite_planet = User_planets.query.filter(User_planets.user_id==user.id).first()
-    if not favorite_planet:
-        planets= list(map(lambda planet: planet.serialize(), planets))
-        user_all_favorites.append(planets)
-    else:
-        user_all_favorites.append(favorite_planet)
-    favorite_vehicle = User_vehicles.query.filter(User_vehicles.user_id==user.id).first()
-    if not favorite_vehicle:
-        print("no hay nada")
-    else: 
-        user_all_favorites.append(favorite_vehicle)
-    favorite_character = User_characters.query.filter(User_characters.user_id==user.id).first()
-    if not favorite_character:
-        print("no hay nada")
-    else:
-        user_all_favorites.append(favorite_character)
-    final_list = list(map(lambda favorite: favorite.serialize(), user_all_favorites))
+    favorite_planet = User_planets.query.filter(User_planets.user_id==user.id).all()
+    if favorite_planet:
+        planets=list(map(lambda planet: planet.serialize_fav(), favorite_planet))
+    favorite_vehicle = User_vehicles.query.filter(User_vehicles.user_id==user.id).all()
+    if favorite_vehicle:
+        vechiles=list(map(lambda vehicle: vehicle.serialize_fav(), favorite_vehicle))
+    favorite_character = User_characters.query.filter(User_characters.user_id==user.id).all()
+    if favorite_character:
+        characters=list(map(lambda character: character.serialize_fav(), favorite_character))
+    final_list = {
+        "planets": planets,
+        "vehicles": vehicles,
+        "characters": characters
+    }
     return jsonify(final_list),200
-#user_Favorites
-#method POST
+
+
+#user_Favorites_planets_____________________________________________________________________________________________
 @app.route('/user/favorite/planet/<int:planets_id>', methods=['POST', 'DELETE'])
 def add_user_favorite_planet(planets_id):
     if request.method=='POST':
@@ -296,7 +295,7 @@ def add_user_favorite_planet(planets_id):
         db.session.commit()
         res = {"msg":"Favorite planet deleted"}
     return jsonify(res),200
-
+#user_Favorites_vehicles_____________________________________________________________________________________________
 @app.route('/user/favorite/vehicle/<int:vehicles_id>', methods=['POST', 'DELETE'])
 def add_user_favorite_vehicle(vehicles_id):
     if request.method=='POST':
@@ -334,7 +333,7 @@ def add_user_favorite_vehicle(vehicles_id):
         db.session.commit()
         res = {"msg":"Favorite vehicle deleted"}
     return jsonify(res),200
-
+#user_Favorites_characters_____________________________________________________________________________________________
 @app.route('/user/favorite/character/<int:characters_id>', methods=['POST', 'DELETE'])
 def add_user_favorite_character(characters_id):
     if request.method=='POST':

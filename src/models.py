@@ -112,7 +112,10 @@ class User_planets(db.Model):
     def serialize(self):
         return {
             "planets":self.planets.serialize()
-        }
+         }
+    def serialize_fav(self):
+        return self.planets.serialize()
+
 class User_vehicles(db.Model):
     __tablename__ = 'user_vehicles'
     id = db.Column(db.Integer, primary_key=True)
@@ -127,7 +130,10 @@ class User_vehicles(db.Model):
     def serialize(self):
         return {
             "vehicles":self.vehicles.serialize()
-        } 
+        }
+    def serialize_fav(self):
+        return self.vehicles.serialize()
+          
 
 class User_characters(db.Model):
     __tablename__ = 'user_characters'
@@ -143,4 +149,6 @@ class User_characters(db.Model):
     def serialize(self):
         return {
             "characters":self.characters.serialize()
-        }  
+        }
+    def serialize_fav(self):
+        return self.characters.serialize()  
